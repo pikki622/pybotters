@@ -22,8 +22,8 @@ def util_api_generater():
     print(chars)
     return {
         k: (
-            "".join([random.choice(chars) for i in range(24)]),
-            "".join([random.choice(chars) for i in range(48)]).encode(),
+            "".join([random.choice(chars) for _ in range(24)]),
+            "".join([random.choice(chars) for _ in range(48)]).encode(),
         )
         for k in keys
     }
@@ -106,10 +106,10 @@ def mock_session(mocker: pytest_mock.MockerFixture):
             "MyPassphrase123",
         ),
     }
-    assert set(apis.keys()) == set(
+    assert set(apis.keys()) == {
         item.name if isinstance(item.name, str) else item.name({})
         for item in pybotters.auth.Hosts.items.values()
-    )
+    }
     m_sess.__dict__["_apis"] = apis
     return m_sess
 

@@ -136,8 +136,7 @@ async def test_websocketqueue_wait_for():
     for dish in menu:
         wsq.onmessage(dish, ws)
 
-    result = []
-    result.append(await wsq.wait_for(0.1))
+    result = [await wsq.wait_for(0.1)]
     result.append(await wsq.wait_for(0.1))
     result.append(await wsq.wait_for(0.1))
 

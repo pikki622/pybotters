@@ -33,15 +33,14 @@ class BitMEXDataStore(DataStoreManager):
             elif action == "delete":
                 if table in self:
                     self[table]._delete(data)
-            if table == "order":
-                if "order" in self:
-                    self["order"]._delete(
-                        [
-                            order
-                            for order in self["order"].find()
-                            if order["ordStatus"] in ("Filled", "Canceled")
-                        ]
-                    )
+            if table == "order" and "order" in self:
+                self["order"]._delete(
+                    [
+                        order
+                        for order in self["order"].find()
+                        if order["ordStatus"] in ("Filled", "Canceled")
+                    ]
+                )
 
     @property
     def funding(self) -> DataStore:

@@ -208,12 +208,14 @@ class Orders(DataStore):
         for item in data:
             if item["status"] == "new":
                 self._insert([item])
-            elif item["status"] == "cancelled":
+            elif (
+                item["status"] == "cancelled"
+                or item["status"] != "partial-fill"
+                and item["status"] == "full-fill"
+            ):
                 self._delete([item])
             elif item["status"] == "partial-fill":
                 self._update([item])
-            elif item["status"] == "full-fill":
-                self._delete([item])
 
     def _onresponse(self, data: list[Item]) -> None:
         # wsから配信される情報とAPIレスポンスで得られる情報の辞書キーが違うのでwsから配信される情報に合わせて格納

@@ -25,7 +25,7 @@ class DataStore:
         self.name: str = name
         self._data: dict[uuid.UUID, Item] = {}
         self._index: dict[int, uuid.UUID] = {}
-        self._keys: tuple[str, ...] = tuple(keys if keys else self._KEYS)
+        self._keys: tuple[str, ...] = tuple(keys or self._KEYS)
         self._events: dict[asyncio.Event, list[Item]] = {}
         self._queues: list[asyncio.Queue] = []
         self._auto_cast = auto_cast
@@ -75,10 +75,9 @@ class DataStore:
                         _id = uuid.uuid4()
                         self._data[_id] = item
                         self._index[keyhash] = _id
-                        self._put("insert", None, item)
                     else:
                         self._data[self._index[keyhash]] = item
-                        self._put("insert", None, item)
+                    self._put("insert", None, item)
             self._sweep_with_key()
         else:
             for item in data:
@@ -238,11 +237,11 @@ class DataStore:
                 if all(k in item and query[k] == item[k] for k in query)
             ]
             self._delete(ret)
-            return ret
         else:
             ret = list(self)
             self._clear()
-            return ret
+
+        return ret
 
     def _set(self, data: Optional[list[Item]] = None) -> None:
         if data is None:

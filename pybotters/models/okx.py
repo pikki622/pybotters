@@ -62,9 +62,8 @@ class OKXDataStore(DataStoreManager):
                 self.algoadvance._onresponse(data["data"])
 
     def _onmessage(self, msg: Any, ws: ClientWebSocketResponse) -> None:
-        if "event" in msg:
-            if msg["event"] == "error":
-                logger.warning(msg)
+        if "event" in msg and msg["event"] == "error":
+            logger.warning(msg)
         if all(k in msg for k in ("arg", "data")):
             channel: str = msg["arg"]["channel"]
             if "candle" in channel:
@@ -74,9 +73,8 @@ class OKXDataStore(DataStoreManager):
                     channel = "mark-price-candle"
                 elif channel.startswith("index-candle"):
                     channel = "index-candle"
-            if "books" in channel:
-                if channel.startswith("books"):
-                    channel = "books"
+            if "books" in channel and channel.startswith("books"):
+                channel = "books"
             if channel in self:
                 self[channel]._onmessage(msg)
 

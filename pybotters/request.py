@@ -7,7 +7,6 @@ from .auth import Auth, Hosts
 
 class ClientRequest(aiohttp.ClientRequest):
     def __init__(self, *args, **kwargs) -> None:
-        method: str = args[0]
         url: URL = args[1]
 
         if kwargs["params"]:
@@ -15,6 +14,7 @@ class ClientRequest(aiohttp.ClientRequest):
             url2 = url.with_query(kwargs["params"])
             q.extend(url2.query)
             url = url.with_query(q)
+            method: str = args[0]
             args = (
                 method,
                 url,

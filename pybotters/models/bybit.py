@@ -75,9 +75,8 @@ class BybitInverseDataStore(DataStoreManager):
                 self.wallet._onresponse(data["result"])
 
     def _onmessage(self, msg: Item, ws: ClientWebSocketResponse) -> None:
-        if "success" in msg:
-            if not msg["success"]:
-                logger.warning(msg)
+        if "success" in msg and not msg["success"]:
+            logger.warning(msg)
         if "topic" in msg:
             topic: str = msg["topic"]
             data = msg["data"]
@@ -216,9 +215,8 @@ class BybitUSDTDataStore(DataStoreManager):
                 self.wallet._onresponse(data["result"])
 
     def _onmessage(self, msg: Item, ws: ClientWebSocketResponse) -> None:
-        if "success" in msg:
-            if not msg["success"]:
-                logger.warning(msg)
+        if "success" in msg and not msg["success"]:
+            logger.warning(msg)
         if "topic" in msg:
             topic: str = msg["topic"]
             data = msg["data"]
@@ -364,13 +362,13 @@ class InstrumentInverse(DataStore):
     _KEYS = ["symbol"]
 
     def _onmessage(self, topic: str, type_: str, data: Item) -> None:
-        if type_ == "snapshot":
+        if type_ == "delta":
+            self._update(data["update"])
+        elif type_ == "snapshot":
             symbol = topic.split(".")[-1]  # ex: "instrument_info.100ms.BTCUSD"
             result = self.find({"symbol": symbol})
             self._delete(result)
             self._insert([data])
-        elif type_ == "delta":
-            self._update(data["update"])
 
 
 class InstrumentUSDT(InstrumentInverse):

@@ -196,8 +196,7 @@ class ChildOrders(DataStore):
                 self._delete([item])
             elif item["event_type"] == "EXECUTION":
                 if item["outstanding_size"]:
-                    orig = self.get(item)
-                    if orig:
+                    if orig := self.get(item):
                         if isinstance(orig["size"], int) and isinstance(
                             item["size"], int
                         ):
@@ -237,12 +236,12 @@ class ParentOrders(DataStore):
             elif item["event_type"] in ("CANCEL", "EXPIRE"):
                 self._delete([item])
             elif item["event_type"] == "COMPLETE":
-                orig = self.get(item)
-                if orig:
-                    if orig["parent_order_type"] in ("IFD", "IFDOCO"):
-                        if item["parameter_index"] >= 2:
-                            self._delete([item])
-                    else:
+                if orig := self.get(item):
+                    if (
+                        orig["parent_order_type"] in ("IFD", "IFDOCO")
+                        and item["parameter_index"] >= 2
+                        or orig["parent_order_type"] not in ("IFD", "IFDOCO")
+                    ):
                         self._delete([item])
 
 
@@ -261,8 +260,9 @@ class Positions(DataStore):
 
     def _onresponse(self, data: list[Item]) -> None:
         if data:
-            positions = self._find_with_uuid({"product_code": data[0]["product_code"]})
-            if positions:
+            if positions := self._find_with_uuid(
+                {"product_code": data[0]["product_code"]}
+            ):
                 self._remove(list(positions.keys()))
             for item in data:
                 self._insert([self._common_keys(item)])
@@ -275,8 +275,9 @@ class Positions(DataStore):
                 continue
 
             if item["event_type"] == "EXECUTION":
-                positions = self._find_with_uuid({"product_code": product_code})
-                if positions:
+                if positions := self._find_with_uuid(
+                    {"product_code": product_code}
+                ):
                     item = self._common_keys(item)
                     if positions[next(iter(positions))]["side"] == item["side"]:
                         self._insert([item])
@@ -341,9 +342,7 @@ class Balance(DataStore):
 
             # amount
             if item["event_type"] == "EXECUTION":
-                # base
-                orig = self.get({"currency_code": base})
-                if orig:
+                if orig := self.get({"currency_code": base}):
                     ope = self._BASE_OPERATOR[item["side"]]
 
                     base_amount = Decimal(str(item["size"]))
@@ -360,9 +359,7 @@ class Balance(DataStore):
                         ]
                     )
 
-                # quote
-                orig = self.get({"currency_code": quote})
-                if orig:
+                if orig := self.get({"currency_code": quote}):
                     ope = self._QUOTE_OPERATOR[item["side"]]
                     rounder = self._ROUNDER[item["side"]]
 

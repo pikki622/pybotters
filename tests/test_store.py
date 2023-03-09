@@ -221,10 +221,10 @@ def test_find_and_delete():
     # return value
     assert isinstance(ret2, list)
     assert len(ret2) == 500
-    assert all(map(lambda record: 1 == record["mod"], ret2))
+    assert all(map(lambda record: record["mod"] == 1, ret2))
     # data store
     assert len(ds2._data) == 500
-    assert all(map(lambda record: 0 == record["mod"], ds2._data.values()))
+    assert all(map(lambda record: record["mod"] == 0, ds2._data.values()))
     assert len(ds2._index) == 500
 
     ds3 = pybotters.store.DataStore(keys=["foo"], data=data)

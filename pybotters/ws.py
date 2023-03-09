@@ -26,8 +26,7 @@ logger = logging.getLogger(__name__)
 
 def pretty_modulename(e: Exception) -> str:
     modulename = e.__class__.__name__
-    module = inspect.getmodule(e)
-    if module:
+    if module := inspect.getmodule(e):
         modulename = f"{module.__name__}.{modulename}"
     return modulename
 
@@ -264,16 +263,15 @@ class Auth:
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
                 data = msg.json()
-                if "success" in data:  # for almost all
-                    if data["success"]:
-                        break
-                    else:
-                        logger.warning(data)
-                else:  # for spot v1 only
-                    if "auth" in data:
-                        break
-                    elif "code" in data:
-                        logger.warning(data)
+                if (
+                    "success" in data
+                    and data["success"]
+                    or "success" not in data
+                    and "auth" in data
+                ):
+                    break
+                elif "success" in data or "code" in data:
+                    logger.warning(data)
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 break
 
@@ -309,9 +307,8 @@ class Auth:
                 data = msg.json()
                 if "error" in data:
                     logger.warning(data)
-                if "id" in data:
-                    if data["id"] == "auth":
-                        break
+                if "id" in data and data["id"] == "auth":
+                    break
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 break
 
@@ -337,9 +334,8 @@ class Auth:
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
                 data = msg.json()
-                if "error" in data:
-                    if data["error"] is not None:
-                        logger.warning(data)
+                if "error" in data and data["error"] is not None:
+                    logger.warning(data)
                 if data["result"] == {"status": "success"}:
                     break
             elif msg.type == aiohttp.WSMsgType.ERROR:
@@ -505,15 +501,17 @@ class ClientWebSocketResponse(aiohttp.ClientWebSocketResponse):
             self.__dict__["_pingtask"] = asyncio.create_task(
                 HeartbeatHosts.items[self._response.url.host](self)
             )
-        if self._response.__dict__["_auth"] is _Auth:
-            if self._response.url.host in AuthHosts.items:
-                if (
-                    AuthHosts.items[self._response.url.host].name
-                    in self._response._session.__dict__["_apis"]
-                ):
-                    self.__dict__["_authtask"] = asyncio.create_task(
-                        AuthHosts.items[self._response.url.host].func(self)
-                    )
+        if (
+            self._response.__dict__["_auth"] is _Auth
+            and self._response.url.host in AuthHosts.items
+            and (
+                AuthHosts.items[self._response.url.host].name
+                in self._response._session.__dict__["_apis"]
+            )
+        ):
+            self.__dict__["_authtask"] = asyncio.create_task(
+                AuthHosts.items[self._response.url.host].func(self)
+            )
         self._lock = asyncio.Lock()
 
     async def _wait_authtask(self):

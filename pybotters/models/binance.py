@@ -136,23 +136,20 @@ class BinanceDataStoreBase(DataStoreManager):
     def _get_event_from_msg(self, msg):
         _data = msg["data"] if "data" in msg else msg
         _data = _data if isinstance(_data, dict) else _data[0]
-        if "e" in _data:
-            return _data["e"]
-        else:
-            return None
+        return _data["e"] if "e" in _data else None
 
     def _onmessage_hook(self, msg: Any, event: str, data: Any):
         """子クラス用メッセージハンドラーhook"""
         ...
 
     def _is_trade_msg(self, msg: Any, event: str):
-        return event in ("trade", "aggTrade")
+        return event in {"trade", "aggTrade"}
 
     def _is_kline_msg(self, msg: Any, event: str):
         return event == "kline"
 
     def _is_ticker_msg(self, msg: Any, event: str):
-        return event in ("24hrMiniTicker", "24hrTicker")
+        return event in {"24hrMiniTicker", "24hrTicker"}
 
     def _is_bookticker_msg(self, msg: Any, event: str):
         if event is None:

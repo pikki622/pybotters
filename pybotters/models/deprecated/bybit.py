@@ -83,9 +83,8 @@ class BybitDataStore(DataStoreManager):
                 self.kline._onresponse(data["result"])
 
     def _onmessage(self, msg: Item, ws: ClientWebSocketResponse) -> None:
-        if "success" in msg:
-            if not msg["success"]:
-                logger.warning(msg)
+        if "success" in msg and not msg["success"]:
+            logger.warning(msg)
         if "topic" in msg:
             topic: str = msg["topic"]
             data: Any = msg["data"]
@@ -236,13 +235,13 @@ class Instrument(DataStore):
     _KEYS = ["symbol"]
 
     def _onmessage(self, topic: str, type_: str, data: Item) -> None:
-        if type_ == "snapshot":
+        if type_ == "delta":
+            self._update(data["update"])
+        elif type_ == "snapshot":
             symbol = topic.split(".")[-1]  # ex: 'instrument_info.100ms.BTCUSD'
             result = self.find({"symbol": symbol})
             self._delete(result)
             self._insert([data])
-        elif type_ == "delta":
-            self._update(data["update"])
 
 
 class Kline(DataStore):
@@ -386,10 +385,7 @@ class Wallet(DataStore):
     def _onposition(self, data: list[Item]) -> None:
         for item in data:
             symbol: str = item["symbol"]
-            if symbol.endswith("USD"):
-                coin = symbol[:-3]  # ex: BTCUSD
-            else:
-                coin = symbol[:-6]  # ex: BTCUSDU21
+            coin = symbol[:-3] if symbol.endswith("USD") else symbol[:-6]
             self._update(
                 [
                     {

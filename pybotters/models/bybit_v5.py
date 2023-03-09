@@ -61,9 +61,8 @@ class BybitV5DataStore(DataStoreManager):
                     getattr(self[topic], "_onresponse")(resp.url, data)
 
     def _onmessage(self, msg: Item, ws: ClientWebSocketResponse) -> None:
-        if "success" in msg:
-            if not msg["success"]:
-                logger.warning(msg)
+        if "success" in msg and not msg["success"]:
+            logger.warning(msg)
 
         if "topic" in msg:
             dot_topic: str = msg["topic"]
@@ -291,8 +290,7 @@ class Wallet(DataStore):
 
     def _onresponse(self, url: URL, data: Item) -> None:
         for item in data["result"]["list"]:
-            orig_item = self.get(item)
-            if orig_item:
+            if orig_item := self.get(item):
                 current_coins = set(map(lambda x: x["coin"], item["coin"]))
                 item["coin"].extend(
                     filter(lambda x: x["coin"] not in current_coins, orig_item["coin"])
@@ -301,8 +299,7 @@ class Wallet(DataStore):
 
     def _onmessage(self, msg: Item, topic_ext: list[str]) -> None:
         for item in msg["data"]:
-            orig_item = self.get(item)
-            if orig_item:
+            if orig_item := self.get(item):
                 current_coins = set(map(lambda x: x["coin"], item["coin"]))
                 item["coin"].extend(
                     filter(lambda x: x["coin"] not in current_coins, orig_item["coin"])

@@ -364,18 +364,17 @@ class TopKOrderBook(DataStore):
         data = []
         for side in ("asks", "bids"):
             items = msg["data"][side]
-            for k, i in enumerate(items, start=1):
-                data.append(
-                    {
-                        "symbol": symbol,
-                        "k": k,
-                        "side": side[:-1],
-                        "price": float(i[0]),
-                        "size": float(i[1]),
-                        "timestamp": msg["data"]["timestamp"],
-                    }
-                )
-
+            data.extend(
+                {
+                    "symbol": symbol,
+                    "k": k,
+                    "side": side[:-1],
+                    "price": float(i[0]),
+                    "size": float(i[1]),
+                    "timestamp": msg["data"]["timestamp"],
+                }
+                for k, i in enumerate(items, start=1)
+            )
         self._update(data)
 
 
@@ -509,16 +508,15 @@ class Orders(DataStore):
             # new order
             if tp == "open":
                 self._insert([d])
+        elif tp in ("match", "triggered"):
+            # Market order
+            pass
+        elif tp in ("cancel", "canceled", "filled"):
+            self._delete([item])
+        elif tp == "update":
+            self._update([item])
         else:
-            if tp in ("match", "triggered"):
-                # Market order
-                pass
-            elif tp in ("cancel", "canceled", "filled"):
-                self._delete([item])
-            elif tp == "update":
-                self._update([item])
-            else:
-                raise RuntimeError(f"Unknown type: {tp} ({d})")
+            raise RuntimeError(f"Unknown type: {tp} ({d})")
 
 
 class Balance(_UpdateStore):
@@ -673,7 +671,14 @@ class Positions(DataStore):
     def _onmessage(self, msg: dict[str, Any]) -> None:
         d = msg["data"]
         reason = d["changeReason"]
-        if reason == "positionChange":
+        if reason == "markPriceChange":
+            # mark priceの変化によるポジション情報の部分更新
+            # 性質上prev_itemは必ず存在するはず（ポジションが解消された後にマークプライス変化に
+            # よるポジション情報の更新メッセージは来ないはず）
+            prev_item = self.get(d)
+            updated_item = {**prev_item, **d}
+            self._update([updated_item])
+        elif reason == "positionChange":
             if d["isOpen"]:
                 # 新規ポジション or ポジション数量変化
                 assert d["currentQty"] != 0
@@ -683,10 +688,3 @@ class Positions(DataStore):
                 # ポジション解消
                 assert d["currentQty"] == 0
                 self._delete([d])
-        elif reason == "markPriceChange":
-            # mark priceの変化によるポジション情報の部分更新
-            # 性質上prev_itemは必ず存在するはず（ポジションが解消された後にマークプライス変化に
-            # よるポジション情報の更新メッセージは来ないはず）
-            prev_item = self.get(d)
-            updated_item = {**prev_item, **d}
-            self._update([updated_item])

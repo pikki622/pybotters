@@ -20,13 +20,13 @@ async def test_client():
     assert client._base_url == base_url
     assert client._session.closed
     assert client._session.__dict__["_apis"] == {
-        "name1": tuple(["key1", "secret1".encode()]),
-        "name2": tuple(["key2", "secret2".encode()]),
-        "name3": tuple(["key3", "secret3".encode()]),
+        "name1": ("key1", "secret1".encode()),
+        "name2": ("key2", "secret2".encode()),
+        "name3": ("key3", "secret3".encode()),
     }
-    assert [tuple(x) for x in apis.values()] != [
-        x for x in client._session.__dict__["_apis"].values()
-    ]
+    assert [tuple(x) for x in apis.values()] != list(
+        client._session.__dict__["_apis"].values()
+    )
     assert "pybotters" in client._session.headers["User-Agent"].split("/")[0]
     assert client._session.headers["User-Agent"].split("/")[1] == pybotters.__version__
 

@@ -32,7 +32,7 @@ class Auth:
         body = JsonPayload(data) if data else FormData(data)()
         text = f"{timestamp}{key}{query_string}".encode() + body._value
         signature = hmac.new(secret, text, hashlib.sha256).hexdigest()
-        kwargs.update({"data": body})
+        kwargs["data"] = body
         headers.update(
             {
                 "X-BAPI-API-KEY": key,
@@ -70,7 +70,7 @@ class Auth:
                     url,
                 )
         else:
-            data.update({"timestamp": expires})
+            data["timestamp"] = expires
             # patch (issue #190, #192)
             if url.path != "/api/v3/userDataStream":
                 body = FormData(data)()
@@ -81,7 +81,7 @@ class Auth:
             if url.path != "/api/v3/userDataStream":
                 body._value += f"&signature={signature}".encode()
             body._size = len(body._value)
-            kwargs.update({"data": body})
+            kwargs["data"] = body
         headers.update({"X-MBX-APIKEY": key})
 
         return args
@@ -102,7 +102,7 @@ class Auth:
         timestamp = str(int(time.time() * 1000))
         text = f"{timestamp}{method}{path}".encode() + body._value
         signature = hmac.new(secret, text, hashlib.sha256).hexdigest()
-        kwargs.update({"data": body})
+        kwargs["data"] = body
         headers.update(
             {"ACCESS-KEY": key, "ACCESS-TIMESTAMP": timestamp, "ACCESS-SIGN": signature}
         )
@@ -129,7 +129,7 @@ class Auth:
         else:
             text = f"{timestamp}{method}{path}".encode()
         signature = hmac.new(secret, text, hashlib.sha256).hexdigest()
-        kwargs.update({"data": body})
+        kwargs["data"] = body
         headers.update(
             {"API-KEY": key, "API-TIMESTAMP": timestamp, "API-SIGN": signature}
         )
@@ -155,7 +155,7 @@ class Auth:
         else:
             text = nonce.encode() + body._value
         signature = hmac.new(secret, text, hashlib.sha256).hexdigest()
-        kwargs.update({"data": body})
+        kwargs["data"] = body
         headers.update(
             {"ACCESS-KEY": key, "ACCESS-NONCE": nonce, "ACCESS-SIGNATURE": signature}
         )
@@ -178,7 +178,7 @@ class Auth:
         expires = str(int((time.time() + 5.0) * 1000))
         message = f"{method}{path}{expires}".encode() + body._value
         signature = hmac.new(secret, message, hashlib.sha256).hexdigest()
-        kwargs.update({"data": body})
+        kwargs["data"] = body
         headers.update(
             {"api-expires": expires, "api-key": key, "api-signature": signature}
         )
@@ -201,7 +201,7 @@ class Auth:
         expiry = str(int((time.time() + 60.0)))
         formula = f"{path}{query}{expiry}".encode() + body._value
         signature = hmac.new(secret, formula, hashlib.sha256).hexdigest()
-        kwargs.update({"data": body})
+        kwargs["data"] = body
         headers.update(
             {
                 "x-phemex-access-token": key,
@@ -226,7 +226,7 @@ class Auth:
         body = FormData(data)()
         message = f"{nonce}{url}".encode() + body._value
         signature = hmac.new(secret, message, hashlib.sha256).hexdigest()
-        kwargs.update({"data": body})
+        kwargs["data"] = body
         headers.update(
             {"ACCESS-KEY": key, "ACCESS-NONCE": nonce, "ACCESS-SIGNATURE": signature}
         )
@@ -252,7 +252,7 @@ class Auth:
         sign = base64.b64encode(
             hmac.new(secret, text, hashlib.sha256).digest()
         ).decode()
-        kwargs.update({"data": body})
+        kwargs["data"] = body
         headers.update(
             {
                 "OK-ACCESS-KEY": key,
@@ -284,7 +284,7 @@ class Auth:
         sign = base64.b64encode(
             hmac.new(secret, msg, digestmod=hashlib.sha256).digest()
         ).decode()
-        kwargs.update({"data": body})
+        kwargs["data"] = body
         headers.update(
             {
                 "Content-Type": "application/json",
@@ -315,7 +315,7 @@ class Auth:
         else:
             body = JsonPayload(data) if data else FormData(data)()
             parameter = body._value
-            kwargs.update({"data": body})
+            kwargs["data"] = body
         signature = hmac.new(
             secret, f"{key}{timestamp}".encode() + parameter, hashlib.sha256
         ).hexdigest()
@@ -365,7 +365,7 @@ class Auth:
 
         url = url.with_query(query)
         args = (method, url)
-        kwargs.update({"data": body._value})
+        kwargs["data"] = body._value
         headers.update({"X-MEXC-APIKEY": key, "Content-Type": "application/json"})
 
         return args
@@ -388,7 +388,7 @@ class Auth:
         else:
             body = JsonPayload(data) if data else FormData(data)()
             headers["Content-Type"] = "application/json"
-            kwargs.update({"data": body._value})
+            kwargs["data"] = body._value
             str_to_sign = str(now) + method + url.path + body._value.decode()
 
         signature = base64.b64encode(
@@ -418,9 +418,11 @@ class Item:
 class NameSelector:
     @staticmethod
     def okx(headers: CIMultiDict) -> str:
-        if "x-simulated-trading" in headers:
-            if headers["x-simulated-trading"] == "1":
-                return "okx_demo"
+        if (
+            "x-simulated-trading" in headers
+            and headers["x-simulated-trading"] == "1"
+        ):
+            return "okx_demo"
         return "okx"
 
 
